@@ -1,0 +1,63 @@
+# =============================================================
+# systemd unit — ScamShield AI API
+#
+# Install on a Linux server:
+#   sudo cp deploy/scamshield-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now scamshield-api
+#   sudo systemctl status scamshield-api
+#   journalctl -u scamshield-api -f
+#
+# Assumes the project lives at /opt/scamshield with a venv at /opt/scamshield/.venv
+# and an .env file owned by the service user (chmod 600).
+# =============================================================
+
+[Unit]
+Description=ScamShield AI API (FastAPI)
+Documentation=https://github.com/your-org/scamshield-ai
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=scamshield
+Group=scamshield
+WorkingDirectory=/opt/scamshield
+EnvironmentFile=/opt/scamshield/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/scamshield
+Environment=WEB_CONCURRENCY=2
+
+ExecStart=/opt/scamshield/.venv/bin/uvicorn backend.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 2 \
+    --proxy-headers \
+    --forwarded-allow-ips=127.0.0.1 \
+    --timeout-keep-alive 30 \
+    --log-level info
+
+# --- resilience ---
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+
+# --- hardening (the process is treated as untrusted) ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadWritePaths=/opt/scamshield/data /opt/scamshield/logs
+
+[Install]
+WantedBy=multi-user.target

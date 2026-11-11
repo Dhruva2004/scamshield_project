@@ -1,0 +1,89 @@
+{
+  "model_name": "LogisticRegression",
+  "model_key": "logistic_regression",
+  "active_model_file": "model_logistic_regression.joblib",
+  "version": "1.0.0",
+  "dataset": "UCI SMS Spam Collection (id 228)",
+  "trained_at": "2026-11-09T17:09:41+00:00",
+  "train_size": 4126,
+  "test_size": 1032,
+  "test_size_ratio": 0.2,
+  "cv_folds": 5,
+  "random_state": 42,
+  "sklearn_version": "1.6.1",
+  "python_version": "3.13.16",
+  "accuracy": 0.9855,
+  "precision": 0.952,
+  "recall": 0.9297,
+  "f1": 0.9407,
+  "roc_auc": 0.9985,
+  "confusion_matrix": [
+    [
+      898,
+      6
+    ],
+    [
+      9,
+      119
+    ]
+  ],
+  "classification_report": "              precision    recall  f1-score   support\n\n         ham       0.99      0.99      0.99       904\n        spam       0.95      0.93      0.94       128\n\n    accuracy                           0.99      1032\n   macro avg       0.97      0.96      0.97      1032\nweighted avg       0.99      0.99      0.99      1032\n",
+  "comparison": [
+    {
+      "model_name": "MultinomialNB",
+      "model_key": "naive_bayes",
+      "accuracy": 0.9845,
+      "precision": 0.9828,
+      "recall": 0.8906,
+      "f1": 0.9344,
+      "roc_auc": 0.9896,
+      "cv_f1_mean": 0.951,
+      "cv_f1_std": 0.014,
+      "train_seconds": 0.0,
+      "rationale": "Fast, strong baseline for count/TF-IDF features. Very interpretable: each word contributes an additive log-probability.",
+      "notes": "Assumes word independence - a simplification, but it works well on short SMS.",
+      "chosen": false
+    },
+    {
+      "model_name": "LogisticRegression",
+      "model_key": "logistic_regression",
+      "accuracy": 0.9855,
+      "precision": 0.952,
+      "recall": 0.9297,
+      "f1": 0.9407,
+      "roc_auc": 0.9985,
+      "cv_f1_mean": 0.9372,
+      "cv_f1_std": 0.0116,
+      "train_seconds": 0.01,
+      "rationale": "Linear decision boundary works well for high-dimensional sparse TF-IDF; gives calibrated probabilities and per-word coefficients we can explain.",
+      "notes": "Probabilities are the model's confidence, not a guarantee about a specific message.",
+      "_tied_with": [
+        "RandomForest",
+        "MultinomialNB"
+      ],
+      "_best_f1": 0.9435,
+      "chosen": true
+    },
+    {
+      "model_name": "RandomForest",
+      "model_key": "random_forest",
+      "accuracy": 0.9864,
+      "precision": 0.975,
+      "recall": 0.9141,
+      "f1": 0.9435,
+      "roc_auc": 0.9982,
+      "cv_f1_mean": 0.9312,
+      "cv_f1_std": 0.0167,
+      "train_seconds": 1.25,
+      "rationale": "Non-linear ensemble that can capture interactions between words (e.g. 'free' + 'call' + 'now'). Useful as a contrast to linear models.",
+      "notes": "Slower, larger artefact, and less interpretable per prediction than LR.",
+      "chosen": false
+    }
+  ],
+  "selection_reason": "LogisticRegression: spam F1 0.9407, precision 0.9520, recall 0.9297, ROC-AUC 0.9985 on the held-out test set; 5-fold CV F1 0.9372 +/- 0.0116. It is statistically tied on F1 with RandomForest, MultinomialNB (gap < 0.01, smaller than the CV fold spread), so the tie-break was ROC-AUC (0.9985) and then model simplicity.",
+  "limitations": [
+    "English SMS only. Hindi/Hinglish text is NOT reliably classified by this model; those messages rely on the curated rule engine.",
+    "Minority class (12.4% spam): accuracy alone is misleading, so F1/recall are reported.",
+    "The output probability is a model score, not a guarantee of fraud or safety."
+  ]
+}

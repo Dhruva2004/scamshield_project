@@ -1,0 +1,67 @@
+# =============================================================
+# ScamShield AI — API image (FastAPI + trained model)
+# Multi-stage build: dependencies are compiled in one layer and
+# copied into a slim runtime, so the final image has no build tools.
+# =============================================================
+
+# ---------- Stage 1: build dependencies ----------
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# build-essential is needed only if a wheel is unavailable for the target arch.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN python -m venv /opt/venv \
+ && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# ---------- Stage 2: runtime ----------
+FROM python:3.12-slim AS runtime
+
+# Unbuffered output so container logs appear immediately.
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PATH="/opt/venv/bin:$PATH"
+
+# Run as a non-root user: a compromised process should not own the container.
+RUN groupadd --system --gid 1001 scamshield \
+ && useradd --system --uid 1001 --gid scamshield --create-home scamshield
+
+WORKDIR /app
+
+COPY --from=builder /opt/venv /opt/venv
+# NOTE: models/ and ml/vectorizers/ must be IN the build context.
+# In plain git they are .gitignore'd, so build from the export folder
+# (`python scripts/export_for_git.py`) or from the zip, not from a bare clone.
+COPY backend/ ./backend/
+COPY ml/ ./ml/
+COPY models/ ./models/
+COPY scripts/ ./scripts/
+
+# Only the artefacts the API needs at runtime; raw data stays out of the image.
+RUN mkdir -p /app/data /app/logs \
+ && chown -R scamshield:scamshield /app
+
+USER scamshield
+
+EXPOSE 8000
+
+# Healthcheck reads $PORT too, so it keeps working on platforms that reassign it.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD python -c "import os,urllib.request,sys; \
+port=os.getenv('PORT','8000'); \
+sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{port}/api/v1/health', timeout=4).status == 200 else 1)"
+
+# $PORT is injected by Render/Railway/Fly/Heroku; locally it falls back to 8000.
+# WEB_CONCURRENCY=2 by default; override with `-e WEB_CONCURRENCY=4`.
+CMD ["sh", "-c", "uvicorn backend.main:app \
+  --host 0.0.0.0 --port ${PORT:-8000} \
+  --workers ${WEB_CONCURRENCY:-2} \
+  --proxy-headers --forwarded-allow-ips='*' \
+  --timeout-keep-alive 30 \
+  --log-level info"]

@@ -1,0 +1,215 @@
+/* =====================================================================
+   ScamShield AI - custom theme
+   Injected into Streamlit with st.markdown("<style>...</style>")
+   Palette: deep navy canvas, cyan/teal accents, amber for risk.
+   NOTE: never start a line with whitespace then '#' in this file - Streamlit
+   parses the inlined CSS as Markdown, and a '#' line becomes a HEADING, which
+   closes the <style> block and dumps the rest of the CSS onto the page.
+   ===================================================================== */
+
+:root {
+  --ss-bg: #0b1220;
+  --ss-surface: #121c2e;
+  --ss-surface-2: #17233a;
+  --ss-border: #24344f;
+  --ss-text: #e8eefc;
+  --ss-muted: #96a7c4;
+  --ss-accent: #22d3ee;
+  --ss-accent-2: #4f8cff;
+  --ss-low: #22c55e;
+  --ss-medium: #f59e0b;
+  --ss-high: #f97316;
+  --ss-critical: #ef4444;
+}
+
+/* Kill the default Streamlit white canvas */
+.stApp {
+  background:
+    radial-gradient(1100px 520px at 12% -10%, rgba(79, 140, 255, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 92% 0%, rgba(34, 211, 238, 0.12), transparent 55%),
+    var(--ss-bg);
+  color: var(--ss-text);
+}
+
+/* Typography */
+html, body, [class*="css"] {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+  color: var(--ss-text);
+}
+
+/* ---------------- Header / branding ---------------- */
+.ss-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border: 1px solid var(--ss-border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.14), rgba(34, 211, 238, 0.06));
+  margin-bottom: 18px;
+}
+
+.ss-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ss-accent-2), var(--ss-accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex: 0 0 auto;
+}
+
+.ss-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.ss-subtitle {
+  color: var(--ss-muted);
+  font-size: 0.86rem;
+  margin: 2px 0 0 0;
+}
+
+/* ---------------- Metric cards ---------------- */
+.ss-card {
+  background: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  height: 100%;
+}
+
+.ss-card-label {
+  color: var(--ss-muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 600;
+}
+
+.ss-card-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin-top: 6px;
+  line-height: 1.1;
+}
+
+.ss-card-foot {
+  color: var(--ss-muted);
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* ---------------- Risk pills ---------------- */
+.ss-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ss-pill-low      { background: rgba(34, 197, 94, 0.16);  color: #6ee7a8; border: 1px solid rgba(34,197,94,.45); }
+.ss-pill-medium   { background: rgba(245, 158, 11, 0.16); color: #fbbf24; border: 1px solid rgba(245,158,11,.45); }
+.ss-pill-high     { background: rgba(249, 115, 22, 0.16); color: #fb923c; border: 1px solid rgba(249,115,22,.45); }
+.ss-pill-critical { background: rgba(239, 68, 68, 0.18);  color: #fca5a5; border: 1px solid rgba(239,68,68,.5); }
+
+/* ---------------- Finding rows ---------------- */
+.ss-finding {
+  border-left: 3px solid var(--ss-accent);
+  background: var(--ss-surface-2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.ss-finding-title { font-weight: 600; font-size: 0.92rem; }
+.ss-finding-desc  { color: var(--ss-muted); font-size: 0.82rem; margin-top: 2px; }
+.ss-finding-match {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.76rem;
+  color: var(--ss-accent);
+  margin-top: 6px;
+  word-break: break-word;
+}
+
+/* ---------------- Risk score meter ---------------- */
+.ss-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ss-surface-2);
+  overflow: hidden;
+  border: 1px solid var(--ss-border);
+}
+
+.ss-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* ---------------- Misc ---------------- */
+.ss-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.ss-muted { color: var(--ss-muted); }
+
+.ss-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ss-muted);
+  margin: 22px 0 10px 0;
+}
+
+.ss-divider {
+  height: 1px;
+  background: var(--ss-border);
+  margin: 18px 0;
+}
+
+/* Streamlit widget polish */
+div[data-testid="stSidebar"] {
+  background: var(--ss-surface);
+  border-right: 1px solid var(--ss-border);
+}
+
+div[data-testid="stMetricValue"] { color: var(--ss-text); }
+
+.stTextArea textarea, .stTextInput input {
+  background: var(--ss-surface-2) !important;
+  color: var(--ss-text) !important;
+  border: 1px solid var(--ss-border) !important;
+  border-radius: 10px !important;
+}
+
+.stButton > button {
+  border-radius: 10px;
+  font-weight: 600;
+  border: 1px solid var(--ss-border);
+}
+
+.stButton > button[kind="primary"] {
+  background: linear-gradient(135deg, var(--ss-accent-2), var(--ss-accent));
+  color: #06121f;
+  border: none;
+}
+
+.stDataFrame { border-radius: 12px; overflow: hidden; }
+
+/* Hide Streamlit chrome we do not need */
+/* Streamlit chrome */
+#MainMenu, footer { visibility: hidden; }

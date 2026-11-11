@@ -1,0 +1,62 @@
+# =============================================================================
+# render.yaml - Render Blueprint for ScamShield AI (API)
+# =============================================================================
+# Deploy:  Render Dashboard -> New -> Blueprint -> pick this repo -> Apply.
+#
+# Render reads this file, builds deploy/Dockerfile.api, and starts the container.
+# Any value marked `sync: false` is NOT stored in git - Render asks you for it in
+# the dashboard and keeps it as a secret.
+# =============================================================================
+
+services:
+  - type: web
+    name: scamshield-api
+    runtime: docker
+    plan: free
+    region: singapore          # closest free region to India; change if you prefer
+    dockerfilePath: ./deploy/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    envVars:
+      # ---- runtime profile ------------------------------------------------
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: WEB_CONCURRENCY
+        value: "2"             # free instance = 0.1 CPU; 2 is plenty
+
+      # ---- secrets: Render prompts for these on first deploy -------------
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: API_KEY
+        sync: false
+
+      # ---- storage --------------------------------------------------------
+      # SQLite lives on the container filesystem. On the FREE plan that disk is
+      # ephemeral: it survives restarts but is wiped on every redeploy.
+      # The app re-creates the schema automatically, so it never 500s - you just
+      # lose history. For persistent history use a paid plan + a disk:
+      #
+      #   disk:
+      #     name: scamshield-data
+      #     mountPath: /app/data
+      #     sizeGB: 1
+      #
+      - key: DATABASE_URL
+        value: sqlite:///./data/scamshield.db
+
+      # ---- privacy --------------------------------------------------------
+      - key: STORE_RAW_MESSAGE
+        value: "false"         # never persist plaintext of real users' messages
+      - key: PRIVACY_SALT
+        generateValue: true    # Render generates a long random string
+
+      # ---- first-boot demo data -------------------------------------------
+      # Seeds the dashboard with 11 REAL pipeline runs once, so a fresh deploy
+      # is not an empty screen during a demo. Set to "false" for a clean product.
+      - key: SEED_DEMO_DATA
+        value: "true"

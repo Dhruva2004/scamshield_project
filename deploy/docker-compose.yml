@@ -1,0 +1,113 @@
+# =============================================================
+# ScamShield AI — full stack
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#
+# Services
+#   api       FastAPI backend        (internal :8000, published for /docs)
+#   ui        Streamlit dashboard    (published :8501)
+#   postgres  optional production DB (commented out by default)
+# =============================================================
+
+name: scamshield
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    image: scamshield-api:1.0.0
+    container_name: scamshield-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # ---- application ----
+      APP_NAME: "ScamShield AI"
+      ENVIRONMENT: production
+      DEBUG: "false"
+      LOG_LEVEL: INFO
+      API_PORT: "8000"
+      WEB_CONCURRENCY: "2"
+      # ---- security ----
+      # Set a real key before exposing this beyond localhost.
+      API_KEY: "${API_KEY:-}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:8501}"
+      # ---- database ----
+      DATABASE_URL: "sqlite:///./data/scamshield.db"
+      # To use the postgres service below instead:
+      # DATABASE_URL: "postgresql+psycopg://scamshield:${POSTGRES_PASSWORD:-changeme}@postgres:5432/scamshield"
+      # ---- ml ----
+      MODEL_DIR: "/app/models"
+      VECTORIZER_DIR: "/app/ml/vectorizers"
+      ACTIVE_MODEL: "model_logistic_regression.joblib"
+      ML_SPAM_THRESHOLD: "0.50"
+      # ---- genai (optional) ----
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GEMINI_MODEL: "${GEMINI_MODEL:-gemini-2.0-flash}"
+      GEMINI_ENABLED: "${GEMINI_ENABLED:-true}"
+      # ---- privacy ----
+      STORE_RAW_MESSAGE: "${STORE_RAW_MESSAGE:-true}"
+      PRIVACY_SALT: "${PRIVACY_SALT:-change-this-to-a-long-random-string}"
+      HISTORY_MAX_ROWS: "5000"
+    volumes:
+      # Persist the SQLite database and the retention log across restarts.
+      - scamshield-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [scamshield]
+
+  ui:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.ui
+    image: scamshield-ui:1.0.0
+    container_name: scamshield-ui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      # The UI talks to the API over the compose network, never localhost.
+      API_BASE_URL: "http://api:8000"
+      API_KEY: "${API_KEY:-}"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [scamshield]
+
+  # ------------------------------------------------------------------
+  # Optional PostgreSQL. Enable with:
+  #   docker compose -f deploy/docker-compose.yml --profile postgres up -d
+  # and point DATABASE_URL at it (see the commented line above).
+  # The repository layer needs the SQLAlchemy/psycopg swap described in
+  # docs/FUTURE_SCOPE.md §3 before this becomes active.
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: scamshield-db
+    profiles: ["postgres"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scamshield
+      POSTGRES_USER: scamshield
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+    volumes:
+      - scamshield-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scamshield -d scamshield"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [scamshield]
+
+volumes:
+  scamshield-data:
+  scamshield-pg:
+
+networks:
+  scamshield:
+    driver: bridge

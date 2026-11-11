@@ -1,0 +1,27 @@
+# =============================================================
+# Streamlit runtime configuration (applies to dev and production)
+# =============================================================
+[server]
+headless = true
+address = "0.0.0.0"
+port = 8501
+# Long-running scans are quick, but keep the socket alive on slow networks.
+enableCORS = true
+enableXsrfProtection = true
+maxUploadSize = 5
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"
+primaryColor = "#4f8cff"
+backgroundColor = "#0b1220"
+secondaryBackgroundColor = "#121c2e"
+textColor = "#e8eefc"
+font = "sans serif"
+
+[client]
+# Show a clear message instead of a spinner if the API is unreachable.
+showErrorDetails = true
+toolbarMode = "minimal"
